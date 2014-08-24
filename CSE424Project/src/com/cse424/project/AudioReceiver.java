@@ -3,7 +3,6 @@ package com.cse424.project;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
 
 import android.media.MediaPlayer;
 import android.os.ParcelFileDescriptor;
@@ -19,12 +18,16 @@ public class AudioReceiver  {
         isReceiving = false;
     }
 
-    public void start() throws IOException  {
-        mSocket = new ServerSocket(mSourcePort);
-        mPlayer = new MediaPlayer();
-        isReceiving = true;
+    public void start() {
+        try {
+            mSocket = new ServerSocket(mSourcePort);
+            mPlayer = new MediaPlayer();
+            isReceiving = true;
 
-        while(isReceiving)  new AudioReceiverThread(mSocket.accept(), mPlayer);
+            while(isReceiving)  new AudioReceiverThread(mSocket, mPlayer);
+        } catch(IOException e)  {
+            e.printStackTrace();
+        }
     }
 
     public void stop()  {
@@ -48,9 +51,9 @@ public class AudioReceiver  {
 
     private static class AudioReceiverThread extends Thread {
         private MediaPlayer mPlayer;
-        private Socket mSocket;
+        private ServerSocket mSocket;
 
-        public AudioReceiverThread(Socket socket, MediaPlayer player)   {
+        public AudioReceiverThread(ServerSocket socket, MediaPlayer player) {
             mSocket = socket;
             mPlayer = player;
 
@@ -59,9 +62,11 @@ public class AudioReceiver  {
 
         @Override
         public void run()   {
-            FileInputStream fis = new FileInputStream(ParcelFileDescriptor.fromSocket(mSocket).getFileDescriptor());
+            FileInputStream fis = null;
 
             try {
+                 fis = new FileInputStream(ParcelFileDescriptor.fromSocket(mSocket.accept()).getFileDescriptor());
+
                 if(fis.available() != -1)   {
                     mPlayer.setDataSource(fis.getFD());
                     mPlayer.prepare();
@@ -70,10 +75,12 @@ public class AudioReceiver  {
             } catch(IOException e)  {
                 e.printStackTrace();
             } finally {
-                try {
-                    fis.close();
-                } catch(IOException e)  {
-                    e.printStackTrace();
+                if(fis != null) {
+                    try {
+                        fis.close();
+                    } catch(IOException e)  {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
