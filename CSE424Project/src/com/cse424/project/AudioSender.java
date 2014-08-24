@@ -34,11 +34,13 @@ public class AudioSender    {
     }
 
     public void stop()  {
-        if(mRecorder == null || mDestSocket == null)    return;
+        if(mRecorder == null)   return;
 
         mRecorder.stop();
         mRecorder.release();
         mRecorder = null;
+
+        if(mDestSocket == null) return;
 
         try {
             mDestSocket.close();
