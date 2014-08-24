@@ -9,6 +9,7 @@ import android.os.ParcelFileDescriptor;
 public class AudioSender    {
     private int mDestPort;
     private MediaRecorder mRecorder;
+    private Socket mDestSocket;
     private String mDestIP;
 
     public AudioSender(String destIP, int destPort) {
@@ -18,10 +19,13 @@ public class AudioSender    {
 
     public void start() {
         try {
-            ParcelFileDescriptor pfd = ParcelFileDescriptor.fromSocket(new Socket(mDestIP, mDestPort));
+            mDestSocket = new Socket(mDestIP, mDestPort);
 
             mRecorder = new MediaRecorder();
-            mRecorder.setOutputFile(pfd.getFileDescriptor());
+            mRecorder.setOutputFile(ParcelFileDescriptor.fromSocket(mDestSocket).getFileDescriptor());
+            mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+            mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
             mRecorder.prepare();
             mRecorder.start();
         } catch(IOException e)  {
@@ -30,10 +34,18 @@ public class AudioSender    {
     }
 
     public void stop()  {
-        if(mRecorder == null)   return;
+        if(mRecorder == null || mDestSocket == null)    return;
 
         mRecorder.stop();
         mRecorder.release();
         mRecorder = null;
+
+        try {
+            mDestSocket.close();
+        } catch(IOException e)  {
+            e.printStackTrace();
+        }
+
+        mDestSocket = null;
     }
 }
