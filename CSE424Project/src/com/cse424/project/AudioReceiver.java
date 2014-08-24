@@ -53,6 +53,8 @@ public class AudioReceiver  {
         public AudioReceiverThread(Socket socket, MediaPlayer player)   {
             mSocket = socket;
             mPlayer = player;
+
+            start();
         }
 
         @Override
