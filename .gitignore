@@ -5,7 +5,13 @@ project.properties
 proguard-project.txt
 .settings/*
 CSE424Project/.settings/org.eclipse.jdt.core.prefs
-
 CSE424Project/.project
-
 CSE424Project/.classpath
+*.gradle
+*.properties
+*.bat
+gradle/*
+gradlew
+*.iml
+*/build/*
+*.idea
