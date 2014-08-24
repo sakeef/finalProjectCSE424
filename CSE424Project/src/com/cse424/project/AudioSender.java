@@ -6,7 +6,8 @@ import java.net.Socket;
 import android.media.MediaRecorder;
 import android.os.ParcelFileDescriptor;
 
-public class AudioSender    {
+public class AudioSender extends Thread {
+    private boolean mRecording;
     private int mDestPort;
     private MediaRecorder mRecorder;
     private Socket mDestSocket;
@@ -17,10 +18,10 @@ public class AudioSender    {
         mDestPort = destPort;
     }
 
-    public void start() {
+    @Override
+    public void run()   {
         try {
             mDestSocket = new Socket(mDestIP, mDestPort);
-
             mRecorder = new MediaRecorder();
             mRecorder.setOutputFile(ParcelFileDescriptor.fromSocket(mDestSocket).getFileDescriptor());
             mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -33,7 +34,21 @@ public class AudioSender    {
         }
     }
 
-    public void stop()  {
+    public boolean isRecording()    {
+        return mRecording;
+    }
+
+    public void startRecording()    {
+        mRecording = true;
+
+        super.start();
+    }
+
+    public void stopRecording() {
+        super.interrupt();
+
+        mRecording = false;
+
         if(mRecorder == null)   return;
 
         mRecorder.stop();
