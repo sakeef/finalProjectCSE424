@@ -1,87 +1,110 @@
 package com.cse424.project;
 
-import java.io.FileInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 
-import android.media.MediaPlayer;
-import android.os.ParcelFileDescriptor;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 
-public class AudioReceiver  {
-    private boolean isReceiving;
+public class AudioReceiver extends Thread   {
     private int mSourcePort;
-    private MediaPlayer mPlayer;
-    private ServerSocket mSocket;
+    private AudioReceiverThread mReceiverThread;
 
-    public AudioReceiver(int sourcePort)    {
+    public AudioReceiver(int sourcePort)  {
         mSourcePort = sourcePort;
-        isReceiving = false;
     }
 
-    public void start() {
-        try {
-            mSocket = new ServerSocket(mSourcePort);
-            mPlayer = new MediaPlayer();
-            isReceiving = true;
+    public boolean isRunning()  {
+        return mReceiverThread != null && mReceiverThread.isRunning();
+    }
 
-            while(isReceiving)  new AudioReceiverThread(mSocket, mPlayer);
-        } catch(IOException e)  {
-            e.printStackTrace();
+    public void free()  {
+        if(mReceiverThread != null) {
+            mReceiverThread.setRunning(false);
+            mReceiverThread = null;
         }
     }
 
-    public void stop()  {
-        isReceiving = false;
-
-        if(mPlayer == null) return;
-
-        if(mPlayer.isPlaying()) mPlayer.stop();
-
-        mPlayer.release();
-        mPlayer.reset();
-
-        if(mSocket == null) return;
+    @Override
+    public void run()   {
+        ServerSocket serverSocket = null;
 
         try {
-            mSocket.close();
-        } catch(IOException e)  {
+            serverSocket = new ServerSocket(mSourcePort);
+        } catch (IOException e) {
             e.printStackTrace();
+        }
+
+        while(!Thread.currentThread().isInterrupted())  {
+            try {
+                mReceiverThread = new AudioReceiverThread(serverSocket.accept());
+                mReceiverThread.start();
+            } catch(IOException e)  {
+                e.printStackTrace();
+            } catch(NullPointerException npe)   {
+                npe.printStackTrace();
+            }
         }
     }
 
     private static class AudioReceiverThread extends Thread {
-        private MediaPlayer mPlayer;
-        private ServerSocket mSocket;
+        private Socket mSocket;
+        private boolean mKeepRunning;
 
-        public AudioReceiverThread(ServerSocket socket, MediaPlayer player) {
+        public AudioReceiverThread(Socket socket)   {
             mSocket = socket;
-            mPlayer = player;
+        }
 
-            start();
+        public void setRunning(boolean running) {
+            mKeepRunning = running;
+        }
+
+        public boolean isRunning()  {
+            return mKeepRunning;
         }
 
         @Override
         public void run()   {
-            FileInputStream fis = null;
+            byte[] mOutBytes = null;
+            AudioTrack mOutTrack = null;
+            DataInputStream inStream = null;
 
             try {
-                 fis = new FileInputStream(ParcelFileDescriptor.fromSocket(mSocket.accept()).getFileDescriptor());
-
-                if(fis.available() != -1)   {
-                    mPlayer.setDataSource(fis.getFD());
-                    mPlayer.prepare();
-                    mPlayer.start();
-                }
+                inStream = new DataInputStream(mSocket.getInputStream());
+                mKeepRunning = true;
+                int mOutBufferSize = AudioTrack.getMinBufferSize (8000, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
+                mOutTrack = new AudioTrack (AudioManager.STREAM_MUSIC, 8000, AudioFormat.CHANNEL_CONFIGURATION_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT, mOutBufferSize, AudioTrack.MODE_STREAM);
+                mOutBytes = new byte[mOutBufferSize];
             } catch(IOException e)  {
-                e.printStackTrace();
-            } finally {
-                if(fis != null) {
-                    try {
-                        fis.close();
-                    } catch(IOException e)  {
-                        e.printStackTrace();
-                    }
+                e.printStackTrace ();
+            }
+
+            byte[] bytes_pkg;
+
+            if(mOutTrack != null)   mOutTrack.play();
+
+            while(mKeepRunning && mOutBytes != null)    {
+                try {
+                    inStream.read(mOutBytes);
+
+                    bytes_pkg = mOutBytes.clone();
+
+                    mOutTrack.write(bytes_pkg, 0, bytes_pkg.length);
+                } catch(IOException e)  {
+                    e.printStackTrace ();
                 }
+            }
+
+            if(mOutTrack != null)   mOutTrack.stop();
+
+            try {
+                if(inStream != null)    inStream.close();
+            } catch(IOException e)  {
+                e.printStackTrace ();
             }
         }
     }
