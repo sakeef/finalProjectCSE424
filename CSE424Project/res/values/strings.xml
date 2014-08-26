@@ -3,6 +3,7 @@
 
     <string name="app_name">CSE424 Project</string>
     <string name="record">Record</string>
+    <string name="listen">Listen</string>
     <string name="start_audio_activity">Start Audio Activity</string>
     <string name="action_settings">Settings</string>
 

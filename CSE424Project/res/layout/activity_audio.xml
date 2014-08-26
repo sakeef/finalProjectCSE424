@@ -12,4 +12,11 @@
         android:layout_margin="15dip"
         android:text="@string/record" />
 
+    <Button
+        android:id="@+id/listenButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="15dip"
+        android:text="@string/listen" />
+
 </LinearLayout>

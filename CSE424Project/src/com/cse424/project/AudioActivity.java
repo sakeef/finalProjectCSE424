@@ -3,7 +3,6 @@ package com.cse424.project;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.View;
-import android.widget.Button;
 
 public class AudioActivity extends ActionBarActivity {
     @Override
@@ -11,22 +10,29 @@ public class AudioActivity extends ActionBarActivity {
         super.onCreate(icicle);
         setContentView(R.layout.activity_audio);
 
-        Button startButton = (Button) findViewById(R.id.recordButton);
-        final AudioSender sender = new AudioSender("127.0.0.1", 9998);
+        final AudioSender sender = new AudioSender("192.168.0.101", 9998);
         final AudioReceiver receiver = new AudioReceiver(9998);
 
-        startButton.setOnClickListener(new View.OnClickListener()   {
+        findViewById(R.id.recordButton).setOnClickListener(new View.OnClickListener()   {
             @Override
             public void onClick(View v) {
-                if(sender.isRecording())    {
-                    sender.stopRecording();
-                    receiver.stop();
+                if(sender.isRunning())  {
+                    sender.free();
                 } else  {
-                    receiver.start();
-                    sender.startRecording();
+                    sender.start();
                 }
             }
         });
 
+        findViewById(R.id.listenButton).setOnClickListener(new View.OnClickListener()   {
+            @Override
+            public void onClick(View v) {
+                if(receiver.isRunning())    {
+                    receiver.free();
+                } else  {
+                    receiver.start();
+                }
+            }
+        });
     }
 }
