@@ -12,12 +12,10 @@ import android.media.MediaRecorder;
 
 public class AudioSender extends Thread {
     private boolean mKeepRunning;
-    private int mDestPort;
-    private String mDestIP;
+    private Socket mSocket;
 
-    public AudioSender(String destIP, int destPort) {
-        mDestIP = destIP;
-        mDestPort = destPort;
+    public AudioSender(Socket socket)   {
+        mSocket = socket;
     }
 
     public boolean isRunning()  {
@@ -39,7 +37,6 @@ public class AudioSender extends Thread {
         DataOutputStream outStream = null;
 
         try {
-            Socket mSocket = new Socket(mDestIP, mDestPort);
             outStream = new DataOutputStream(mSocket.getOutputStream());
         } catch(UnknownHostException e) {
             e.printStackTrace();
