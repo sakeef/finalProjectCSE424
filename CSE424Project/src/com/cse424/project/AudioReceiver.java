@@ -33,8 +33,8 @@ public class AudioReceiver extends Thread {
         try {
             inStream = new DataInputStream(mSocket.getInputStream());
             mKeepRunning = true;
-            int mOutBufferSize = AudioTrack.getMinBufferSize (8000, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
-            mOutTrack = new AudioTrack (AudioManager.STREAM_MUSIC, 8000, AudioFormat.CHANNEL_CONFIGURATION_MONO,
+            int mOutBufferSize = AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
+            mOutTrack = new AudioTrack(AudioManager.STREAM_VOICE_CALL, 44100, AudioFormat.CHANNEL_CONFIGURATION_MONO,
                     AudioFormat.ENCODING_PCM_16BIT, mOutBufferSize, AudioTrack.MODE_STREAM);
             mOutBytes = new byte[mOutBufferSize];
         } catch(IOException e)  {

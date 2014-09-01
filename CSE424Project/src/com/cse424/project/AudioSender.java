@@ -28,9 +28,10 @@ public class AudioSender extends Thread {
 
     @Override
     public void run()   {
-        int mInBufferSize = AudioRecord.getMinBufferSize(8000, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        AudioRecord mInRec = new AudioRecord(MediaRecorder.AudioSource.MIC, 8000, AudioFormat.CHANNEL_CONFIGURATION_MONO,
+        int mInBufferSize = AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        AudioRecord mInRec = new AudioRecord(MediaRecorder.AudioSource.MIC, 44100, AudioFormat.CHANNEL_CONFIGURATION_MONO,
                 AudioFormat.ENCODING_PCM_16BIT, mInBufferSize);
+
         byte[] mInBytes = new byte[mInBufferSize];
         mKeepRunning = true;
         LinkedList<byte[]> mInQueue = new LinkedList<byte[]>();
