@@ -1,15 +1,8 @@
 package com.cse424.project;
 
-import android.content.Context;
-import android.util.Log;
-import android.widget.Toast;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -17,21 +10,19 @@ public class AudioCall  {
     private static final int INCOMING_CALL_LISTENER_PORT = 8888;
     private static AudioCall mSharedInstance;
     private AudioCallListener mListener;
-    private Context mContext;
     private CallStatus mStatus;
 
     public static enum CallStatus   {
         IN_CALL, LISTENING, FREE, INCOMING, REJECTED, CALLING, ENDED
     }
 
-    public static AudioCall getInstance(Context context, AudioCallListener listener)    {
-        if(mSharedInstance == null) mSharedInstance = new AudioCall(context, listener);
+    public static AudioCall getInstance(AudioCallListener listener) {
+        if(mSharedInstance == null) mSharedInstance = new AudioCall(listener);
 
         return mSharedInstance;
     }
 
-    private AudioCall(Context context, AudioCallListener listener)  {
-        mContext = context;
+    private AudioCall(AudioCallListener listener)  {
         mListener = listener;
 
         setCallStatus(CallStatus.FREE);
@@ -69,18 +60,14 @@ public class AudioCall  {
 
     public void endCall()   {
         if(canEndCall())    {
-            // TODO: end current call
-
-            setCallStatus(CallStatus.FREE);
-//            startListeningForIncomingCall();
+            setCallStatus(CallStatus.ENDED);
+            startListeningForIncomingCall();
         }
     }
 
     public void rejectCall()    {
         if(getCallStatus().equals(CallStatus.INCOMING)) {
             setCallStatus(CallStatus.REJECTED);
-
-            // TODO: reject call
         }
     }
 
@@ -88,8 +75,6 @@ public class AudioCall  {
         if(getCallStatus().equals(CallStatus.INCOMING)) {
             stopListeningForIncomingCall();
             setCallStatus(CallStatus.IN_CALL);
-
-            // TODO: receive call
         }
     }
 
@@ -101,11 +86,7 @@ public class AudioCall  {
     }
 
     public void stopListeningForIncomingCall()  {
-        if(getCallStatus().equals(CallStatus.LISTENING))    {
-            // TODO: end listening
-
-            setCallStatus(CallStatus.FREE);
-        }
+        if(getCallStatus().equals(CallStatus.LISTENING))    setCallStatus(CallStatus.FREE);
     }
 
     public void onIncomingCall()    {
@@ -122,6 +103,8 @@ public class AudioCall  {
 
     private static class IncomingCallListenerThread extends Thread  {
         private AudioCall mAudioCall;
+        private AudioSender serverAudioSender;
+        private AudioReceiver serverAudioReceiver;
 
         public IncomingCallListenerThread(AudioCall audioCall)  {
             mAudioCall = audioCall;
@@ -185,9 +168,32 @@ public class AudioCall  {
                         }
 
                         if(mAudioCall.getCallStatus().equals(CallStatus.IN_CALL))   {
-                            new AudioReceiver(mSocket).start();
-                            new AudioSender(mSocket).start();
-                        } else  {
+                            serverAudioSender = new AudioSender(mSocket);
+                            serverAudioReceiver = new AudioReceiver(mSocket);
+
+                            Thread t = new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    while(mAudioCall.getCallStatus().equals(CallStatus.IN_CALL))    {
+                                        try {
+                                            Thread.sleep(1000);
+                                        } catch(InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+
+                                    serverAudioSender.setRunning(false);
+                                    serverAudioReceiver.setRunning(false);
+                                }
+                            });
+
+                            t.start();
+                            serverAudioSender.start();
+                            serverAudioReceiver.start();
+                        }
+
+
+                        if(!mAudioCall.getCallStatus().equals(CallStatus.IN_CALL))  {
                             outStream.close();
                             mSocket.close();
                         }
@@ -196,10 +202,12 @@ public class AudioCall  {
                     }
                 }
 
-                try {
-                    mServerSocket.close();
-                } catch(IOException e)  {
-                    e.printStackTrace();
+                if(!mAudioCall.getCallStatus().equals(CallStatus.IN_CALL))  {
+                    try {
+                        mServerSocket.close();
+                    } catch(IOException e)  {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -208,6 +216,8 @@ public class AudioCall  {
     private static class MakeCallThread extends Thread  {
         private String mDestIP;
         private AudioCall mAudioCall;
+        private AudioSender clientAudioSender;
+        private AudioReceiver clientAudioReceiver;
 
         public MakeCallThread(String destIP, AudioCall audioCall)   {
             mDestIP = destIP;
@@ -268,9 +278,31 @@ public class AudioCall  {
                 }
 
                 if(mAudioCall.getCallStatus().equals(CallStatus.IN_CALL))   {
-                    new AudioSender(mSocket).start();
-                    new AudioReceiver(mSocket).start();
-                } else  {
+                    clientAudioSender = new AudioSender(mSocket);
+                    clientAudioReceiver = new AudioReceiver(mSocket);
+
+                    Thread t = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            while(mAudioCall.getCallStatus().equals(CallStatus.IN_CALL))    {
+                                try {
+                                    Thread.sleep(1000);
+                                } catch(InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+
+                            clientAudioSender.setRunning(false);
+                            clientAudioReceiver.setRunning(false);
+                        }
+                    });
+
+                    t.start();
+                    clientAudioSender.start();
+                    clientAudioReceiver.start();
+                }
+
+                if(!mAudioCall.getCallStatus().equals(CallStatus.IN_CALL))  {
                     try {
                         if(inStream != null)    inStream.close();
 

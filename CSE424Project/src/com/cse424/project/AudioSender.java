@@ -8,6 +8,7 @@ import java.util.LinkedList;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
+import android.media.AudioTrack;
 import android.media.MediaRecorder;
 
 public class AudioSender extends Thread {
@@ -16,24 +17,26 @@ public class AudioSender extends Thread {
 
     public AudioSender(Socket socket)   {
         mSocket = socket;
+        mKeepRunning = true;
     }
 
     public boolean isRunning()  {
         return mKeepRunning;
     }
 
-    public void free()  {
-        mKeepRunning = false;
+    public void setRunning(boolean running)  {
+        mKeepRunning = running;
     }
 
     @Override
     public void run()   {
-        int mInBufferSize = AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        AudioRecord mInRec = new AudioRecord(MediaRecorder.AudioSource.MIC, 44100, AudioFormat.CHANNEL_CONFIGURATION_MONO,
-                AudioFormat.ENCODING_PCM_16BIT, mInBufferSize);
+        int mOutBufferSize = AudioTrack.getMinBufferSize(8000, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        int mInBufferSize = AudioTrack.getMinBufferSize(8000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        int maxBuffer = Math.max(mInBufferSize, mOutBufferSize);
+        AudioRecord mInRec = new AudioRecord(MediaRecorder.AudioSource.MIC, 8000, AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT, maxBuffer);
 
-        byte[] mInBytes = new byte[mInBufferSize];
-        mKeepRunning = true;
+        byte[] mInBytes = new byte[maxBuffer];
         LinkedList<byte[]> mInQueue = new LinkedList<byte[]>();
         DataOutputStream outStream = null;
 
@@ -50,10 +53,10 @@ public class AudioSender extends Thread {
             mInRec.startRecording();
 
             while(mKeepRunning) {
-                mInRec.read(mInBytes, 0, mInBufferSize);
+                mInRec.read(mInBytes, 0, maxBuffer);
                 bytes_pkg = mInBytes.clone();
 
-                if(mInQueue.size() >= 2 && outStream != null)   outStream.write(mInQueue.removeFirst(), 0, mInQueue.removeFirst().length);
+                if(mInQueue.size() >= 2 && outStream != null)   outStream.write(mInQueue.removeFirst(), 0, maxBuffer);
 
                 mInQueue.add(bytes_pkg);
             }

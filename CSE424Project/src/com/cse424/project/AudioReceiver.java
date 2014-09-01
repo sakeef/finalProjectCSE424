@@ -14,6 +14,7 @@ public class AudioReceiver extends Thread {
 
     public AudioReceiver(Socket socket)   {
         mSocket = socket;
+        mKeepRunning = true;
     }
 
     public void setRunning(boolean running) {
@@ -29,16 +30,18 @@ public class AudioReceiver extends Thread {
         byte[] mOutBytes = null;
         AudioTrack mOutTrack = null;
         DataInputStream inStream = null;
+        int maxBuffer = 400;
 
         try {
             inStream = new DataInputStream(mSocket.getInputStream());
-            mKeepRunning = true;
-            int mOutBufferSize = AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
-            mOutTrack = new AudioTrack(AudioManager.STREAM_VOICE_CALL, 44100, AudioFormat.CHANNEL_CONFIGURATION_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT, mOutBufferSize, AudioTrack.MODE_STREAM);
-            mOutBytes = new byte[mOutBufferSize];
+            int mOutBufferSize = AudioTrack.getMinBufferSize(8000, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+            int mInBufferSize = AudioTrack.getMinBufferSize(8000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+            maxBuffer = Math.max(mInBufferSize, mOutBufferSize);
+            mOutTrack = new AudioTrack(AudioManager.STREAM_VOICE_CALL, 8000, AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT, maxBuffer, AudioTrack.MODE_STREAM);
+            mOutBytes = new byte[maxBuffer];
         } catch(IOException e)  {
-            e.printStackTrace ();
+            e.printStackTrace();
         }
 
         byte[] bytes_pkg;
@@ -51,7 +54,7 @@ public class AudioReceiver extends Thread {
 
                 bytes_pkg = mOutBytes.clone();
 
-                mOutTrack.write(bytes_pkg, 0, bytes_pkg.length);
+                mOutTrack.write(bytes_pkg, 0, maxBuffer);
             } catch(IOException e)  {
                 e.printStackTrace ();
             }

@@ -13,7 +13,7 @@ public class AudioActivity extends ActionBarActivity implements AudioCallListene
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
-        setContentView(R.layout.activity_audio_2);
+        setContentView(R.layout.activity_audio);
 
         callButton = (Button) findViewById(R.id.callButton);
         endCallButton = (Button) findViewById(R.id.endButton);
@@ -21,16 +21,16 @@ public class AudioActivity extends ActionBarActivity implements AudioCallListene
         rejectButton = (Button) findViewById(R.id.rejectButton);
         statusTextView = (TextView) findViewById(R.id.statusTextView);
 
-        final AudioCall mAudioCall = AudioCall.getInstance(this, this);
+        final AudioCall mAudioCall = AudioCall.getInstance(this);
 
         callButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mAudioCall.makeNewCall("192.168.0.101");
                 callButton.setEnabled(false);
-                acceptButton.setEnabled(false);
-                rejectButton.setEnabled(false);
-                endCallButton.setEnabled(false);
+                endCallButton.setVisibility(View.VISIBLE);
+                acceptButton.setVisibility(View.GONE);
+                rejectButton.setVisibility(View.GONE);
             }
         });
 
@@ -38,10 +38,10 @@ public class AudioActivity extends ActionBarActivity implements AudioCallListene
             @Override
             public void onClick(View v) {
                 mAudioCall.endCall();
-                callButton.setEnabled(false);
-                acceptButton.setEnabled(false);
-                rejectButton.setEnabled(false);
-                endCallButton.setEnabled(false);
+                callButton.setEnabled(true);
+                acceptButton.setVisibility(View.GONE);
+                rejectButton.setVisibility(View.GONE);
+                endCallButton.setVisibility(View.GONE);
             }
         });
 
@@ -50,9 +50,9 @@ public class AudioActivity extends ActionBarActivity implements AudioCallListene
             public void onClick(View v) {
                 mAudioCall.receiveCall();
                 callButton.setEnabled(false);
-                acceptButton.setEnabled(false);
-                rejectButton.setEnabled(false);
-                endCallButton.setEnabled(false);
+                acceptButton.setVisibility(View.GONE);
+                rejectButton.setVisibility(View.GONE);
+                endCallButton.setVisibility(View.VISIBLE);
             }
         });
 
@@ -60,40 +60,12 @@ public class AudioActivity extends ActionBarActivity implements AudioCallListene
             @Override
             public void onClick(View v) {
                 mAudioCall.rejectCall();
-                callButton.setEnabled(false);
-                acceptButton.setEnabled(false);
-                rejectButton.setEnabled(false);
-                endCallButton.setEnabled(false);
+                callButton.setEnabled(true);
+                acceptButton.setVisibility(View.GONE);
+                rejectButton.setVisibility(View.GONE);
+                endCallButton.setVisibility(View.GONE);
             }
         });
-
-
-
-
-//        final AudioSender sender = new AudioSender("192.168.0.101", 9998);
-//        final AudioReceiver receiver = new AudioReceiver(9998);
-//
-//        findViewById(R.id.recordButton).setOnClickListener(new View.OnClickListener()   {
-//            @Override
-//            public void onClick(View v) {
-//                if(sender.isRunning())  {
-//                    sender.free();
-//                } else  {
-//                    sender.start();
-//                }
-//            }
-//        });
-//
-//        findViewById(R.id.listenButton).setOnClickListener(new View.OnClickListener()   {
-//            @Override
-//            public void onClick(View v) {
-//                if(receiver.isRunning())    {
-//                    receiver.free();
-//                } else  {
-//                    receiver.start();
-//                }
-//            }
-//        });
 
         mAudioCall.startListeningForIncomingCall();
 
