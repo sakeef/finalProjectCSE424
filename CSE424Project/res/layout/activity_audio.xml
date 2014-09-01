@@ -4,6 +4,13 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+    
+    <EditText
+        android:id="@+id/ipEditText"
+        android:layout_margin="10dip"
+        android:hint="Enter IP here"
+        android:layout_width="fill_parent"
+        android:layout_height="50dip"/>
 
     <Button
         android:id="@+id/callButton"

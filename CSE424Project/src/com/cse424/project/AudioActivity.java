@@ -4,7 +4,9 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class AudioActivity extends ActionBarActivity implements AudioCallListener   {
     private Button acceptButton, callButton, endCallButton, rejectButton;
@@ -26,7 +28,11 @@ public class AudioActivity extends ActionBarActivity implements AudioCallListene
         callButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mAudioCall.makeNewCall("192.168.0.101");
+                try {
+                    mAudioCall.makeNewCall(((EditText)findViewById(R.id.ipEditText)).getText().toString());
+                } catch (Exception e)   {
+                    Toast.makeText(AudioActivity.this, "Invalid IP!", Toast.LENGTH_SHORT).show();
+                }
                 callButton.setEnabled(false);
                 endCallButton.setVisibility(View.VISIBLE);
                 acceptButton.setVisibility(View.GONE);
